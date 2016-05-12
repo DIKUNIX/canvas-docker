@@ -3,20 +3,22 @@ FROM ubuntu:14.04
 MAINTAINER Jay Luker <jay_luker@harvard.edu>
 
 ENV POSTGRES_VERSION 9.3
-ENV RAILS_ENV development
+#ENV RAILS_ENV development
+ENV RAILS_ENV production
 
 # enable https repos and add in nodesource repo
-RUN apt-get -y install apt-transport-https
-COPY assets/nodesource.list /etc/apt/sources.list.d/nodesource.list
-ADD https://deb.nodesource.com/gpgkey/nodesource.gpg.key /tmp/nodesource.gpg.key
-RUN apt-key add /tmp/nodesource.gpg.key
+#RUN apt-get -y install apt-transport-https
+#COPY assets/nodesource.list /etc/apt/sources.list.d/nodesource.list
+#ADD https://deb.nodesource.com/gpgkey/nodesource.gpg.key /tmp/nodesource.gpg.key
+#RUN apt-key add /tmp/nodesource.gpg.key
 
 # add nodejs and recommended ruby repos
 RUN apt-get update \
-    && apt-get -y install software-properties-common python-software-properties \
+    && apt-get -y install curl software-properties-common python-software-properties \
     && add-apt-repository ppa:brightbox/ppa \
     && add-apt-repository ppa:brightbox/ruby-ng \
     && apt-get update
+RUN curl -sL https://deb.nodesource.com/setup_0.12 | bash
 
 # install deps for building/running canvas
 RUN apt-get install -y \
@@ -43,13 +45,17 @@ ENV LC_ALL en_US.UTF-8
 RUN cd /opt \
     && git clone https://github.com/instructure/canvas-lms.git \
     && cd /opt/canvas-lms \
-    && bundle install --path vendor/bundle --without="mysql"
+    && bundle install --path vendor/bundle --without="sqlite mysql"
 
 # config setup
 RUN cd /opt/canvas-lms \
     && for config in amazon_s3 delayed_jobs domain file_store outgoing_mail security external_migration \
        ; do cp config/$config.yml.example config/$config.yml \
        ; done
+
+RUN cd /opt/canvas-lms \
+    && mkdir -p log tmp/pids public/assets public/stylesheets/compiled \
+    && touch Gemmfile.lock
 
 RUN cd /opt/canvas-lms \
     && npm install --unsafe-perm \

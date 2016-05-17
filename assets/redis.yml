@@ -3,7 +3,7 @@ test:
     - "redis://localhost"
   database: 1
 
-development:
+production:
   servers:
     - "redis://localhost"
 
